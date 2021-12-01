@@ -22,7 +22,7 @@ def mostrar_menu():
     2)arp spoofing
     3)DHCP spoofing
     4)clonar pagina
-    5)SHELL
+    5)SHELL2
           '''
           )
 
