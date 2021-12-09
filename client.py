@@ -92,13 +92,15 @@ def escaneo():
         print("Ya hay un escaneo realizado,¿quieres hacer otro escaneo?")
         eleccion = input('S=SI\nN=NO\n')
         if eleccion == 's':
-            stdin, stdout, stderr = client.exec_command('sudo python3 project/arpspoof.py')
+            del hosts[:]
+            del macs[:]
+            stdin, stdout, stderr = client.exec_command('sudo python3 project/server.py --eleccion=scan')
             parsear_escaneo(stdout.read().decode())
             mostrar_escaneo(0)
 
 
     else:
-        stdin, stdout, stderr = client.exec_command('sudo python3 project/arpspoof.py')
+        stdin, stdout, stderr = client.exec_command('sudo python3 project/server.py --eleccion=scan')
         parsear_escaneo(stdout.read().decode())
         mostrar_escaneo(0)
 
@@ -179,8 +181,8 @@ if __name__ == '__main__':
             cmd = input(Fore.RED + "raspberry" + Fore.WHITE + "$")
             Fore.WHITE
             if cmd == '1':
-                mostrar_escaneo(1)
-                # escaneo(client)
+                # mostrar_escaneo(1)
+                escaneo()
             elif cmd == "2":
                 mostrar_escaneo(1)
                 victima = input("SELECCIONA VICTIMA  \n$")
